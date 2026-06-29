@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Reader</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f3;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  .container {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e0e0dc;
+    padding: 2rem;
+    width: 100%;
+    max-width: 680px;
+  }
+  h1 {
+    font-size: 18px;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 240px;
+    resize: vertical;
+    font-size: 15px;
+    line-height: 1.7;
+    border: 1px solid #e0e0dc;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: inherit;
+    color: #1a1a1a;
+    background: #fff;
+    outline: none;
+  }
+  textarea:focus { border-color: #1a6ef7; }
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 1.25rem;
+  }
+  .speed-label {
+    font-size: 13px;
+    color: #888;
+    white-space: nowrap;
+  }
+  input[type=range] {
+    flex: 1;
+    accent-color: #1a6ef7;
+    height: 4px;
+    cursor: pointer;
+  }
+  .speed-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+    min-width: 36px;
+    text-align: right;
+  }
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 1.25rem;
+  }
+  .btn-play {
+    background: #1a6ef7;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
+    font-size: 15px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+  }
+  .btn-play:hover { background: #155dd4; }
+  .btn-stop {
+    background: transparent;
+    color: #666;
+    border: 1px solid #d0d0cc;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 15px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-stop:hover { background: #f5f5f3; }
+  .status {
+    font-size: 13px;
+    color: #888;
+    margin-top: 10px;
+    min-height: 20px;
+  }
+  .key-hint {
+    font-size: 12px;
+    color: #bbb;
+    margin-top: 8px;
+  }
+  .key-hint kbd {
+    background: #f0f0ee;
+    border: 1px solid #d0d0cc;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #666;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Text Reader</h1>
+
+  <textarea id="text-input" placeholder="読み上げたいテキストをここにペーストしてください。"></textarea>
+
+  <div class="speed-row">
+    <span class="speed-label">再生速度</span>
+    <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1">
+    <span class="speed-value" id="speed-val">1.0x</span>
+  </div>
+
+  <div class="actions">
+    <button class="btn-play" id="play-btn" onclick="handlePlay()">▶ 再生</button>
+    <button class="btn-stop" onclick="handleStop()">■ 停止</button>
+  </div>
+
+  <div class="status" id="status">テキストをペーストして再生を押してください</div>
+  <div class="key-hint"><kbd>Space</kbd> キーで再生・停止できます（テキスト入力中は除く）</div>
+</div>
+
+<script>
+  const slider = document.getElementById('speed-slider');
+  const speedVal = document.getElementById('speed-val');
+  const playBtn = document.getElementById('play-btn');
+  const statusEl = document.getElementById('status');
+  let utterance = null;
+
+  slider.addEventListener('input', () => {
+    speedVal.textContent = parseFloat(slider.value).toFixed(1) + 'x';
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+      setTimeout(() => startSpeech(), 100);
+    }
+  });
+
+  function startSpeech() {
+    const text = document.getElementById('text-input').value.trim();
+    if (!text) {
+      statusEl.textContent = 'テキストをペーストしてから再生を押してください';
+      return;
+    }
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = parseFloat(slider.value);
+    utterance.lang = 'en-US';
+    utterance.onstart = () => {
+      playBtn.textContent = '▶ 再生中';
+      statusEl.textContent = '読み上げ中… Space キーまたは停止ボタンで止められます';
+    };
+    utterance.onend = () => {
+      playBtn.textContent = '▶ 再生';
+      statusEl.textContent = '読み上げが完了しました';
+    };
+    utterance.onerror = () => {
+      playBtn.textContent = '▶ 再生';
+      statusEl.textContent = 'エラーが発生しました。ブラウザが読み上げに対応しているか確認してください';
+    };
+    speechSynthesis.speak(utterance);
+  }
+
+  function handlePlay() {
+    speechSynthesis.cancel();
+    setTimeout(() => startSpeech(), 100);
+  }
+
+  function handleStop() {
+    speechSynthesis.cancel();
+    playBtn.textContent = '▶ 再生';
+    statusEl.textContent = '停止しました';
+  }
+
+  // スペースキーで再生・停止（テキストエリア入力中は除く）
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      if (speechSynthesis.speaking) {
+        handleStop();
+      } else {
+        handlePlay();
+      }
+    }
+  });
+</script>
+</body>
+</html>
