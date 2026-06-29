@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WPM Tracker</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: #f5f5f3;
@@ -14,54 +14,38 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
   }
   .container {
-    background: #ffffff;
+    background: #fff;
     border-radius: 12px;
     border: 1px solid #e0e0dc;
-    padding: 2rem;
+    padding: 1.5rem;
     width: 100%;
     max-width: 680px;
   }
-  h1 {
-    font-size: 18px;
-    font-weight: 500;
-    color: #1a1a1a;
-    margin-bottom: 1.5rem;
-  }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 1.2rem; }
+
   .stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 1.5rem;
+    gap: 10px;
+    margin-bottom: 1.2rem;
   }
   .stat {
     background: #f5f5f3;
     border-radius: 8px;
-    padding: 1rem;
+    padding: 0.8rem;
     text-align: center;
   }
-  .stat-label {
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 4px;
-  }
-  .stat-value {
-    font-size: 32px;
-    font-weight: 500;
-    color: #1a1a1a;
-    line-height: 1.2;
-  }
+  .stat-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .stat-value { font-size: 28px; font-weight: 500; color: #1a1a1a; line-height: 1.2; }
   .stat-value.accent { color: #1a6ef7; }
-  .stat-unit {
-    font-size: 12px;
-    color: #aaa;
-    margin-top: 2px;
-  }
+  .stat-unit { font-size: 11px; color: #aaa; margin-top: 2px; }
+
   textarea {
     width: 100%;
-    min-height: 220px;
+    min-height: 180px;
     resize: vertical;
     font-size: 15px;
     line-height: 1.7;
@@ -72,43 +56,46 @@
     color: #1a1a1a;
     background: #fff;
     outline: none;
+    -webkit-appearance: none;
   }
   textarea:focus { border-color: #1a6ef7; }
-  textarea:disabled { background: #f5f5f3; color: #555; cursor: not-allowed; }
-  .actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 1rem;
-  }
+  textarea:disabled { background: #f5f5f3; color: #555; }
+
+  .actions { display: flex; gap: 10px; margin-top: 1rem; }
+
   .btn-start {
     background: #1a6ef7;
     color: #fff;
     border: none;
     border-radius: 8px;
-    padding: 10px 28px;
-    font-size: 15px;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 500;
     cursor: pointer;
     font-family: inherit;
-    font-weight: 500;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+    min-height: 48px;
   }
-  .btn-start:hover { background: #155dd4; }
+  .btn-start:active { background: #1055c4; }
+
   .btn-reset {
     background: transparent;
     color: #666;
     border: 1px solid #d0d0cc;
     border-radius: 8px;
-    padding: 10px 20px;
+    padding: 14px 20px;
     font-size: 15px;
     cursor: pointer;
     font-family: inherit;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+    min-height: 48px;
   }
-  .btn-reset:hover { background: #f5f5f3; }
-  .status {
-    font-size: 13px;
-    color: #888;
-    margin-top: 10px;
-    min-height: 20px;
-  }
+  .btn-reset:active { background: #f0f0ee; }
+
+  .status { font-size: 13px; color: #888; margin-top: 10px; min-height: 20px; }
+
   .result-banner {
     display: none;
     background: #eef4ff;
@@ -147,8 +134,8 @@
   <textarea id="text-input" placeholder="英文をここにペーストしてください。単語数が自動でカウントされます。"></textarea>
 
   <div class="actions">
-    <button class="btn-start" id="main-btn" onclick="handleBtn()">▶ Start</button>
-    <button class="btn-reset" onclick="handleReset()">Reset</button>
+    <button id="main-btn" class="btn-start">▶ Start</button>
+    <button id="reset-btn" class="btn-reset">Reset</button>
   </div>
 
   <div class="status" id="status">テキストをペーストして Start を押してください</div>
@@ -156,29 +143,30 @@
 </div>
 
 <script>
-  let timerInterval = null;
-  let startTime = null;
-  let elapsedSeconds = 0;
-  let running = false;
+  var timerInterval = null;
+  var startTime = null;
+  var elapsedSeconds = 0;
+  var running = false;
 
-  const textInput = document.getElementById('text-input');
-  const wordCountEl = document.getElementById('word-count');
-  const timerEl = document.getElementById('timer-val');
-  const wpmEl = document.getElementById('wpm-val');
-  const mainBtn = document.getElementById('main-btn');
-  const statusEl = document.getElementById('status');
-  const resultBanner = document.getElementById('result-banner');
+  var textInput = document.getElementById('text-input');
+  var wordCountEl = document.getElementById('word-count');
+  var timerEl = document.getElementById('timer-val');
+  var wpmEl = document.getElementById('wpm-val');
+  var mainBtn = document.getElementById('main-btn');
+  var resetBtn = document.getElementById('reset-btn');
+  var statusEl = document.getElementById('status');
+  var resultBanner = document.getElementById('result-banner');
 
   textInput.addEventListener('input', updateWordCount);
 
   function countWords(text) {
-    const trimmed = text.trim();
+    var trimmed = text.trim();
     if (!trimmed) return 0;
-    return trimmed.split(/\s+/).filter(w => w.length > 0).length;
+    return trimmed.split(/\s+/).filter(function(w) { return w.length > 0; }).length;
   }
 
   function updateWordCount() {
-    const count = countWords(textInput.value);
+    var count = countWords(textInput.value);
     wordCountEl.textContent = count;
     if (!running) {
       wpmEl.textContent = '—';
@@ -187,14 +175,14 @@
   }
 
   function formatTime(secs) {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return m + ':' + String(s).padStart(2, '0');
+    var m = Math.floor(secs / 60);
+    var s = secs % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
   }
 
-  function handleBtn() {
+  function handleMain() {
     if (!running) {
-      const words = countWords(textInput.value);
+      var words = countWords(textInput.value);
       if (words === 0) {
         statusEl.textContent = 'テキストをペーストしてから Start を押してください';
         return;
@@ -206,7 +194,7 @@
       textInput.disabled = true;
       resultBanner.classList.remove('show');
       statusEl.textContent = '読んでいます… 読み終わったら Stop を押してください';
-      timerInterval = setInterval(() => {
+      timerInterval = setInterval(function() {
         elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
         timerEl.textContent = formatTime(elapsedSeconds);
       }, 500);
@@ -216,9 +204,9 @@
       mainBtn.textContent = '▶ Start';
       textInput.disabled = false;
       if (elapsedSeconds > 0) {
-        const words = countWords(textInput.value);
-        const minutes = elapsedSeconds / 60;
-        const wpm = Math.round(words / minutes);
+        var words = countWords(textInput.value);
+        var minutes = elapsedSeconds / 60;
+        var wpm = Math.round(words / minutes);
         wpmEl.textContent = wpm;
         wpmEl.classList.add('accent');
         statusEl.textContent = '完了！';
@@ -245,6 +233,23 @@
     statusEl.textContent = 'テキストをペーストして Start を押してください';
     resultBanner.classList.remove('show');
   }
+
+  // タッチとクリック両対応
+  mainBtn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    handleMain();
+  });
+  mainBtn.addEventListener('click', function(e) {
+    handleMain();
+  });
+
+  resetBtn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    handleReset();
+  });
+  resetBtn.addEventListener('click', function(e) {
+    handleReset();
+  });
 </script>
 </body>
 </html>
