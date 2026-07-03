@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Text Reader</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: #f5f5f3;
@@ -14,25 +14,21 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
   }
   .container {
-    background: #ffffff;
+    background: #fff;
     border-radius: 12px;
     border: 1px solid #e0e0dc;
-    padding: 2rem;
+    padding: 1.5rem;
     width: 100%;
     max-width: 680px;
   }
-  h1 {
-    font-size: 18px;
-    font-weight: 500;
-    color: #1a1a1a;
-    margin-bottom: 1.5rem;
-  }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 1.2rem; }
+
   textarea {
     width: 100%;
-    min-height: 240px;
+    min-height: 220px;
     resize: vertical;
     font-size: 15px;
     line-height: 1.7;
@@ -45,76 +41,63 @@
     outline: none;
   }
   textarea:focus { border-color: #1a6ef7; }
+
+  /* 読み上げ表示エリア */
+  .reader-view {
+    display: none;
+    border: 1px solid #e0e0dc;
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 220px;
+    max-height: 400px;
+    overflow-y: auto;
+    font-size: 16px;
+    line-height: 2.0;
+    color: #333;
+  }
+  .reader-view.show { display: block; }
+
+  .sentence { transition: background 0.2s; border-radius: 4px; }
+  .sentence.active { background: #fff3cf; }
+
+  .word { cursor: pointer; border-radius: 3px; padding: 1px 1px; }
+  .word:hover { background: #e0ecff; }
+  .word.speaking { background: #1a6ef7; color: #fff; }
+
   .speed-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-top: 1.25rem;
+    margin-top: 1.2rem;
   }
-  .speed-label {
-    font-size: 13px;
-    color: #888;
-    white-space: nowrap;
-  }
-  input[type=range] {
-    flex: 1;
-    accent-color: #1a6ef7;
-    height: 4px;
+  .speed-label { font-size: 13px; color: #888; white-space: nowrap; }
+  input[type=range] { flex: 1; accent-color: #1a6ef7; height: 4px; cursor: pointer; }
+  .speed-value { font-size: 14px; font-weight: 500; min-width: 36px; text-align: right; }
+
+  .actions { display: flex; gap: 10px; margin-top: 1.2rem; flex-wrap: wrap; }
+  .btn {
+    border-radius: 8px;
+    padding: 12px 22px;
+    font-size: 15px;
     cursor: pointer;
-  }
-  .speed-value {
-    font-size: 14px;
-    font-weight: 500;
-    color: #1a1a1a;
-    min-width: 36px;
-    text-align: right;
-  }
-  .actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 1.25rem;
-  }
-  .btn-play {
-    background: #1a6ef7;
-    color: #fff;
+    font-family: inherit;
     border: none;
-    border-radius: 8px;
-    padding: 10px 28px;
-    font-size: 15px;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 500;
+    touch-action: manipulation;
+    min-height: 46px;
   }
-  .btn-play:hover { background: #155dd4; }
-  .btn-stop {
-    background: transparent;
-    color: #666;
-    border: 1px solid #d0d0cc;
-    border-radius: 8px;
-    padding: 10px 20px;
-    font-size: 15px;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .btn-stop:hover { background: #f5f5f3; }
-  .status {
-    font-size: 13px;
-    color: #888;
-    margin-top: 10px;
-    min-height: 20px;
-  }
-  .key-hint {
-    font-size: 12px;
-    color: #bbb;
-    margin-top: 8px;
-  }
+  .btn-primary { background: #1a6ef7; color: #fff; font-weight: 500; }
+  .btn-primary:active { background: #1055c4; }
+  .btn-outline { background: transparent; color: #666; border: 1px solid #d0d0cc; }
+  .btn-outline:active { background: #f0f0ee; }
+
+  .status { font-size: 13px; color: #888; margin-top: 10px; min-height: 20px; }
+  .key-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
   .key-hint kbd {
     background: #f0f0ee;
     border: 1px solid #d0d0cc;
     border-radius: 4px;
     padding: 1px 6px;
     font-size: 12px;
-    font-family: inherit;
     color: #666;
   }
 </style>
@@ -125,78 +108,234 @@
 
   <textarea id="text-input" placeholder="読み上げたいテキストをここにペーストしてください。"></textarea>
 
+  <div class="reader-view" id="reader-view"></div>
+
   <div class="speed-row">
     <span class="speed-label">再生速度</span>
     <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1">
     <span class="speed-value" id="speed-val">1.0x</span>
   </div>
 
-  <div class="actions">
-    <button class="btn-play" id="play-btn" onclick="handlePlay()">▶ 再生</button>
-    <button class="btn-stop" onclick="handleStop()">■ 停止</button>
+  <div class="actions" id="edit-actions">
+    <button class="btn btn-primary" id="mode-btn">📖 読み上げモード開始</button>
   </div>
 
-  <div class="status" id="status">テキストをペーストして再生を押してください</div>
-  <div class="key-hint"><kbd>Space</kbd> キーで再生・停止できます（テキスト入力中は除く）</div>
+  <div class="actions" id="reader-actions" style="display:none;">
+    <button class="btn btn-primary" id="play-btn">▶ 再生</button>
+    <button class="btn btn-outline" id="stop-btn">■ 停止</button>
+    <button class="btn btn-outline" id="edit-btn">✏️ テキストを編集</button>
+  </div>
+
+  <div class="status" id="status">テキストをペーストして「読み上げモード開始」を押してください</div>
+  <div class="key-hint"><kbd>Space</kbd> キーで再生・停止　／　単語をタップするとその単語だけ読み上げます</div>
 </div>
 
 <script>
-  const slider = document.getElementById('speed-slider');
-  const speedVal = document.getElementById('speed-val');
-  const playBtn = document.getElementById('play-btn');
-  const statusEl = document.getElementById('status');
-  let utterance = null;
+  var slider = document.getElementById('speed-slider');
+  var speedVal = document.getElementById('speed-val');
+  var playBtn = document.getElementById('play-btn');
+  var stopBtn = document.getElementById('stop-btn');
+  var modeBtn = document.getElementById('mode-btn');
+  var editBtn = document.getElementById('edit-btn');
+  var statusEl = document.getElementById('status');
+  var textInput = document.getElementById('text-input');
+  var readerView = document.getElementById('reader-view');
+  var editActions = document.getElementById('edit-actions');
+  var readerActions = document.getElementById('reader-actions');
 
-  slider.addEventListener('input', () => {
+  var sentences = [];        // [{el, words:[{el, text}] , text}]
+  var currentSentence = -1;
+  var playing = false;
+  var wordMode = false;      // 単語だけ読み上げ中
+
+  slider.addEventListener('input', function() {
     speedVal.textContent = parseFloat(slider.value).toFixed(1) + 'x';
-    if (speechSynthesis.speaking) {
-      speechSynthesis.cancel();
-      setTimeout(() => startSpeech(), 100);
-    }
   });
 
-  function startSpeech() {
-    const text = document.getElementById('text-input').value.trim();
+  // ------- モード切り替え -------
+  function enterReaderMode() {
+    var text = textInput.value.trim();
     if (!text) {
-      statusEl.textContent = 'テキストをペーストしてから再生を押してください';
+      statusEl.textContent = 'テキストをペーストしてから開始してください';
       return;
     }
-    utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = parseFloat(slider.value);
-    utterance.lang = 'en-US';
-    utterance.onstart = () => {
-      playBtn.textContent = '▶ 再生中';
-      statusEl.textContent = '読み上げ中… Space キーまたは停止ボタンで止められます';
-    };
-    utterance.onend = () => {
-      playBtn.textContent = '▶ 再生';
+    buildReaderView(text);
+    textInput.style.display = 'none';
+    readerView.classList.add('show');
+    editActions.style.display = 'none';
+    readerActions.style.display = 'flex';
+    statusEl.textContent = '再生ボタンを押すか、単語をタップしてください';
+  }
+
+  function enterEditMode() {
+    stopAll();
+    textInput.style.display = '';
+    readerView.classList.remove('show');
+    editActions.style.display = 'flex';
+    readerActions.style.display = 'none';
+    statusEl.textContent = 'テキストを編集できます';
+  }
+
+  // ------- 表示の構築 -------
+  function buildReaderView(text) {
+    readerView.innerHTML = '';
+    sentences = [];
+
+    // センテンス分割（. ! ? の後で分ける。改行も区切り扱い）
+    var rawSentences = text.match(/[^.!?\n]+[.!?]*/g) || [text];
+
+    rawSentences.forEach(function(sentText) {
+      sentText = sentText.trim();
+      if (!sentText) return;
+
+      var sentSpan = document.createElement('span');
+      sentSpan.className = 'sentence';
+
+      var wordObjs = [];
+      var tokens = sentText.split(/(\s+)/);  // 空白も保持
+
+      tokens.forEach(function(tok) {
+        if (/^\s+$/.test(tok)) {
+          sentSpan.appendChild(document.createTextNode(' '));
+        } else if (tok) {
+          var w = document.createElement('span');
+          w.className = 'word';
+          w.textContent = tok;
+          // タップ・クリックで単語読み上げ
+          w.addEventListener('click', function(e) {
+            e.stopPropagation();
+            speakWord(tok, w);
+          });
+          sentSpan.appendChild(w);
+          wordObjs.push({ el: w, text: tok });
+        }
+      });
+
+      readerView.appendChild(sentSpan);
+      readerView.appendChild(document.createTextNode(' '));
+      sentences.push({ el: sentSpan, words: wordObjs, text: sentText });
+    });
+  }
+
+  // ------- ハイライト制御 -------
+  function clearHighlights() {
+    sentences.forEach(function(s) {
+      s.el.classList.remove('active');
+      s.words.forEach(function(w) { w.el.classList.remove('speaking'); });
+    });
+  }
+
+  function highlightWordByCharIndex(sentIdx, charIndex) {
+    var s = sentences[sentIdx];
+    if (!s) return;
+    // charIndexから単語を特定
+    var count = 0;
+    for (var i = 0; i < s.words.length; i++) {
+      var start = s.text.indexOf(s.words[i].text, count);
+      var end = start + s.words[i].text.length;
+      if (charIndex >= start && charIndex < end + 1) {
+        s.words.forEach(function(w) { w.el.classList.remove('speaking'); });
+        s.words[i].el.classList.add('speaking');
+        return;
+      }
+      count = end;
+    }
+  }
+
+  // ------- 再生 -------
+  function playFromSentence(idx) {
+    if (idx >= sentences.length) {
+      stopAll();
       statusEl.textContent = '読み上げが完了しました';
+      return;
+    }
+    playing = true;
+    currentSentence = idx;
+    clearHighlights();
+
+    var s = sentences[idx];
+    s.el.classList.add('active');
+    s.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    var utt = new SpeechSynthesisUtterance(s.text);
+    utt.lang = 'en-US';
+    utt.rate = parseFloat(slider.value);
+
+    utt.onboundary = function(e) {
+      if (e.name === 'word' || e.charIndex !== undefined) {
+        highlightWordByCharIndex(idx, e.charIndex);
+      }
     };
-    utterance.onerror = () => {
-      playBtn.textContent = '▶ 再生';
-      statusEl.textContent = 'エラーが発生しました。ブラウザが読み上げに対応しているか確認してください';
+
+    utt.onend = function() {
+      if (playing && !wordMode) {
+        playFromSentence(idx + 1);
+      }
     };
-    speechSynthesis.speak(utterance);
+    utt.onerror = function() {
+      if (playing && !wordMode) stopAll();
+    };
+
+    speechSynthesis.speak(utt);
+    playBtn.textContent = '▶ 再生中';
+    statusEl.textContent = '読み上げ中… （' + (idx + 1) + ' / ' + sentences.length + ' 文）';
   }
 
   function handlePlay() {
+    stopAll();
+    setTimeout(function() { playFromSentence(0); }, 100);
+  }
+
+  function stopAll() {
+    playing = false;
+    wordMode = false;
     speechSynthesis.cancel();
-    setTimeout(() => startSpeech(), 100);
+    clearHighlights();
+    playBtn.textContent = '▶ 再生';
   }
 
   function handleStop() {
-    speechSynthesis.cancel();
-    playBtn.textContent = '▶ 再生';
+    stopAll();
     statusEl.textContent = '停止しました';
   }
 
-  // スペースキーで再生・停止（テキストエリア入力中は除く）
-  document.addEventListener('keydown', e => {
+  // ------- 単語読み上げ -------
+  function speakWord(word, el) {
+    // 再生中なら停止して単語だけ読む
+    playing = false;
+    wordMode = true;
+    speechSynthesis.cancel();
+    clearHighlights();
+
+    // 記号を除去
+    var clean = word.replace(/[^a-zA-Z0-9'\-]/g, '');
+    if (!clean) return;
+
+    el.classList.add('speaking');
+    var utt = new SpeechSynthesisUtterance(clean);
+    utt.lang = 'en-US';
+    utt.rate = parseFloat(slider.value);
+    utt.onend = function() {
+      el.classList.remove('speaking');
+      wordMode = false;
+      playBtn.textContent = '▶ 再生';
+      statusEl.textContent = '「' + clean + '」を読み上げました。再生ボタンで最初から再生できます';
+    };
+    setTimeout(function() { speechSynthesis.speak(utt); }, 100);
+  }
+
+  // ------- イベント -------
+  modeBtn.addEventListener('click', enterReaderMode);
+  editBtn.addEventListener('click', enterEditMode);
+  playBtn.addEventListener('click', handlePlay);
+  stopBtn.addEventListener('click', handleStop);
+
+  document.addEventListener('keydown', function(e) {
     if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA') {
       e.preventDefault();
       if (speechSynthesis.speaking) {
         handleStop();
-      } else {
+      } else if (readerView.classList.contains('show')) {
         handlePlay();
       }
     }
