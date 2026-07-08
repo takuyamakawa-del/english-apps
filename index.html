@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Apps</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f3;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  .container { width: 100%; max-width: 480px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #888;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .app-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #e0e0dc;
+    border-radius: 12px;
+    padding: 1.2rem 1.3rem;
+    margin-bottom: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .app-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  @media (hover: hover) {
+    .app-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+  }
+  .app-icon {
+    font-size: 32px;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f3;
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+  .app-info { flex: 1; }
+  .app-name {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .app-desc {
+    font-size: 12.5px;
+    color: #888;
+    line-height: 1.5;
+  }
+  .arrow { color: #ccc; font-size: 18px; }
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: #bbb;
+    margin-top: 2rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🇬🇧 English Apps</h1>
+  <p class="subtitle">英語学習ツール集</p>
+
+  <a class="app-card" href="01_wpm_tracker.html">
+    <div class="app-icon">📊</div>
+    <div class="app-info">
+      <div class="app-name">WPM Tracker</div>
+      <div class="app-desc">読む速度を測定・記録。日々の推移をグラフで確認</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+  <a class="app-card" href="02_tts_reader.html">
+    <div class="app-icon">🔊</div>
+    <div class="app-info">
+      <div class="app-name">Text Reader</div>
+      <div class="app-desc">英文を読み上げ。センテンス・単語ハイライト付き</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+  <a class="app-card" href="03_speech_recorder_edge.html">
+    <div class="app-icon">🎙️</div>
+    <div class="app-info">
+      <div class="app-name">1 Min Speech</div>
+      <div class="app-desc">1分間スピーチを録音・再生・文字起こし</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+  <a class="app-card" href="04_vocab_flashcard_v2.html">
+    <div class="app-icon">📖</div>
+    <div class="app-info">
+      <div class="app-name">単語帳</div>
+      <div class="app-desc">Excelから読み込むフラッシュカード。例文読み上げ対応</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+  <footer>Built with Claude</footer>
+</div>
+</body>
+</html>
