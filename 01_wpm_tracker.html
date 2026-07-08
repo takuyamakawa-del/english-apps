@@ -32,20 +32,15 @@
     gap: 10px;
     margin-bottom: 1.2rem;
   }
-  .stat {
-    background: #f5f5f3;
-    border-radius: 8px;
-    padding: 0.8rem;
-    text-align: center;
-  }
+  .stat { background: #f5f5f3; border-radius: 8px; padding: 0.8rem; text-align: center; }
   .stat-label { font-size: 11px; color: #888; margin-bottom: 4px; }
-  .stat-value { font-size: 28px; font-weight: 500; color: #1a1a1a; line-height: 1.2; }
+  .stat-value { font-size: 28px; font-weight: 500; line-height: 1.2; }
   .stat-value.accent { color: #1a6ef7; }
   .stat-unit { font-size: 11px; color: #aaa; margin-top: 2px; }
 
   textarea {
     width: 100%;
-    min-height: 180px;
+    min-height: 160px;
     resize: vertical;
     font-size: 15px;
     line-height: 1.7;
@@ -53,7 +48,6 @@
     border-radius: 8px;
     padding: 12px;
     font-family: inherit;
-    color: #1a1a1a;
     background: #fff;
     outline: none;
     -webkit-appearance: none;
@@ -62,51 +56,60 @@
   textarea:disabled { background: #f5f5f3; color: #555; }
 
   .actions { display: flex; gap: 10px; margin-top: 1rem; }
-
   .btn-start {
-    background: #1a6ef7;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 14px 28px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: inherit;
-    -webkit-appearance: none;
-    touch-action: manipulation;
-    min-height: 48px;
+    background: #1a6ef7; color: #fff; border: none; border-radius: 8px;
+    padding: 14px 28px; font-size: 16px; font-weight: 500; cursor: pointer;
+    font-family: inherit; touch-action: manipulation; min-height: 48px;
   }
   .btn-start:active { background: #1055c4; }
-
   .btn-reset {
-    background: transparent;
-    color: #666;
-    border: 1px solid #d0d0cc;
-    border-radius: 8px;
-    padding: 14px 20px;
-    font-size: 15px;
-    cursor: pointer;
-    font-family: inherit;
-    -webkit-appearance: none;
-    touch-action: manipulation;
-    min-height: 48px;
+    background: transparent; color: #666; border: 1px solid #d0d0cc; border-radius: 8px;
+    padding: 14px 20px; font-size: 15px; cursor: pointer; font-family: inherit;
+    touch-action: manipulation; min-height: 48px;
   }
   .btn-reset:active { background: #f0f0ee; }
 
   .status { font-size: 13px; color: #888; margin-top: 10px; min-height: 20px; }
-
   .result-banner {
-    display: none;
-    background: #eef4ff;
-    border: 1px solid #c0d8ff;
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-top: 1rem;
-    font-size: 14px;
-    color: #1a4ea0;
+    display: none; background: #eef4ff; border: 1px solid #c0d8ff; border-radius: 8px;
+    padding: 12px 16px; margin-top: 1rem; font-size: 14px; color: #1a4ea0;
   }
   .result-banner.show { display: block; }
+
+  /* 履歴 */
+  .history-section { margin-top: 2rem; }
+  .history-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 8px; border-bottom: 1px solid #e0e0dc; margin-bottom: 12px;
+  }
+  .history-title { font-size: 14px; font-weight: 500; color: #555; }
+  .btn-clear {
+    background: transparent; color: #c04040; border: 1px solid #e8c0c0; border-radius: 6px;
+    padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: inherit;
+    touch-action: manipulation;
+  }
+  .btn-clear:active { background: #fdf0f0; }
+
+  .chart-wrap { margin-bottom: 14px; }
+  .chart-svg { width: 100%; height: 120px; display: block; }
+  .chart-empty { font-size: 13px; color: #bbb; text-align: center; padding: 1rem 0; }
+
+  .history-list {}
+  .history-item {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #f5f5f3; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .hi-left { color: #888; }
+  .hi-date { font-size: 12px; }
+  .hi-mid { color: #555; }
+  .hi-wpm { font-weight: 600; color: #1a6ef7; font-size: 16px; min-width: 70px; text-align: right; }
+  .hi-del {
+    background: none; border: none; color: #bbb; font-size: 16px; cursor: pointer;
+    padding: 4px 8px; margin-left: 6px; touch-action: manipulation;
+  }
+  .hi-del:active { color: #c04040; }
+  .history-empty { font-size: 13px; color: #bbb; text-align: center; padding: 1rem 0; }
 </style>
 </head>
 <body>
@@ -140,9 +143,20 @@
 
   <div class="status" id="status">テキストをペーストして Start を押してください</div>
   <div class="result-banner" id="result-banner"></div>
+
+  <!-- 履歴セクション -->
+  <div class="history-section">
+    <div class="history-header">
+      <span class="history-title">📈 記録の推移</span>
+      <button class="btn-clear" id="clear-btn">全削除</button>
+    </div>
+    <div class="chart-wrap" id="chart-wrap"></div>
+    <div class="history-list" id="history-list"></div>
+  </div>
 </div>
 
 <script>
+  var STORAGE_KEY = 'wpm_history';
   var timerInterval = null;
   var startTime = null;
   var elapsedSeconds = 0;
@@ -154,20 +168,127 @@
   var wpmEl = document.getElementById('wpm-val');
   var mainBtn = document.getElementById('main-btn');
   var resetBtn = document.getElementById('reset-btn');
+  var clearBtn = document.getElementById('clear-btn');
   var statusEl = document.getElementById('status');
   var resultBanner = document.getElementById('result-banner');
+  var chartWrap = document.getElementById('chart-wrap');
+  var historyList = document.getElementById('history-list');
 
+  // ------- localStorage -------
+  function loadHistory() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch(e) { return []; }
+  }
+  function saveHistory(arr) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    } catch(e) {}
+  }
+  function addRecord(words, seconds, wpm) {
+    var history = loadHistory();
+    history.push({
+      date: new Date().toISOString(),
+      words: words,
+      seconds: seconds,
+      wpm: wpm
+    });
+    saveHistory(history);
+    renderHistory();
+  }
+  function deleteRecord(index) {
+    var history = loadHistory();
+    history.splice(index, 1);
+    saveHistory(history);
+    renderHistory();
+  }
+  function clearAll() {
+    if (confirm('すべての記録を削除しますか？この操作は元に戻せません。')) {
+      localStorage.removeItem(STORAGE_KEY);
+      renderHistory();
+    }
+  }
+
+  // ------- 履歴表示 -------
+  function formatDate(iso) {
+    var d = new Date(iso);
+    return (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+           d.getHours() + ':' + (d.getMinutes()<10?'0':'') + d.getMinutes();
+  }
+
+  function renderHistory() {
+    var history = loadHistory();
+
+    // グラフ
+    chartWrap.innerHTML = '';
+    if (history.length >= 2) {
+      var w = 640, h = 120, pad = 10;
+      var wpms = history.map(function(r){ return r.wpm; });
+      var min = Math.min.apply(null, wpms);
+      var max = Math.max.apply(null, wpms);
+      if (min === max) { min -= 10; max += 10; }
+      var range = max - min;
+
+      var points = wpms.map(function(v, i) {
+        var x = pad + (w - pad*2) * i / (wpms.length - 1);
+        var y = h - pad - (h - pad*2) * (v - min) / range;
+        return x + ',' + y;
+      }).join(' ');
+
+      var circles = wpms.map(function(v, i) {
+        var x = pad + (w - pad*2) * i / (wpms.length - 1);
+        var y = h - pad - (h - pad*2) * (v - min) / range;
+        return '<circle cx="' + x + '" cy="' + y + '" r="3.5" fill="#1a6ef7"/>';
+      }).join('');
+
+      chartWrap.innerHTML =
+        '<svg class="chart-svg" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+        '<polyline points="' + points + '" fill="none" stroke="#1a6ef7" stroke-width="2"/>' +
+        circles +
+        '</svg>';
+    } else {
+      chartWrap.innerHTML = '<div class="chart-empty">2件以上の記録でグラフが表示されます</div>';
+    }
+
+    // リスト（新しい順）
+    historyList.innerHTML = '';
+    if (history.length === 0) {
+      historyList.innerHTML = '<div class="history-empty">まだ記録がありません</div>';
+      return;
+    }
+    for (var i = history.length - 1; i >= 0; i--) {
+      (function(idx) {
+        var r = history[idx];
+        var item = document.createElement('div');
+        item.className = 'history-item';
+        var mins = Math.floor(r.seconds / 60);
+        var secs = r.seconds % 60;
+        item.innerHTML =
+          '<span class="hi-left hi-date">' + formatDate(r.date) + '</span>' +
+          '<span class="hi-mid">' + r.words + ' 語 / ' + mins + ':' + (secs<10?'0':'') + secs + '</span>' +
+          '<span class="hi-wpm">' + r.wpm + ' <span style="font-size:11px;font-weight:400;">WPM</span></span>';
+        var del = document.createElement('button');
+        del.className = 'hi-del';
+        del.textContent = '✕';
+        del.addEventListener('click', function() { deleteRecord(idx); });
+        item.appendChild(del);
+        historyList.appendChild(item);
+      })(i);
+    }
+  }
+
+  // ------- 計測 -------
   textInput.addEventListener('input', updateWordCount);
 
   function countWords(text) {
     var trimmed = text.trim();
     if (!trimmed) return 0;
-    return trimmed.split(/\s+/).filter(function(w) { return w.length > 0; }).length;
+    return trimmed.split(/\s+/).filter(function(w){ return w.length > 0; }).length;
   }
 
   function updateWordCount() {
-    var count = countWords(textInput.value);
-    wordCountEl.textContent = count;
+    wordCountEl.textContent = countWords(textInput.value);
     if (!running) {
       wpmEl.textContent = '—';
       wpmEl.classList.remove('accent');
@@ -209,9 +330,10 @@
         var wpm = Math.round(words / minutes);
         wpmEl.textContent = wpm;
         wpmEl.classList.add('accent');
-        statusEl.textContent = '完了！';
+        statusEl.textContent = '完了！記録を保存しました';
         resultBanner.textContent = words + ' 語を ' + formatTime(elapsedSeconds) + ' で読みました（' + wpm + ' WPM）';
         resultBanner.classList.add('show');
+        addRecord(words, elapsedSeconds, wpm);
       } else {
         statusEl.textContent = '時間を計測できませんでした';
       }
@@ -222,7 +344,6 @@
     clearInterval(timerInterval);
     running = false;
     elapsedSeconds = 0;
-    startTime = null;
     textInput.disabled = false;
     textInput.value = '';
     wordCountEl.textContent = '0';
@@ -234,22 +355,15 @@
     resultBanner.classList.remove('show');
   }
 
-  // タッチとクリック両対応
-  mainBtn.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    handleMain();
-  });
-  mainBtn.addEventListener('click', function(e) {
-    handleMain();
-  });
+  // タッチ・クリック両対応
+  mainBtn.addEventListener('touchend', function(e){ e.preventDefault(); handleMain(); });
+  mainBtn.addEventListener('click', handleMain);
+  resetBtn.addEventListener('touchend', function(e){ e.preventDefault(); handleReset(); });
+  resetBtn.addEventListener('click', handleReset);
+  clearBtn.addEventListener('click', clearAll);
 
-  resetBtn.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    handleReset();
-  });
-  resetBtn.addEventListener('click', function(e) {
-    handleReset();
-  });
+  // 初期表示
+  renderHistory();
 </script>
 </body>
 </html>
